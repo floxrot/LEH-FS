@@ -28,3 +28,8 @@ E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1
 E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\obj\Debug\LEH-FS.csproj.CopyComplete
 E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\obj\Debug\LEH_FS.dll
 E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\obj\Debug\LEH_FS.pdb
+E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\bin\Debug\System.Net.Http.dll
+E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\bin\Debug\System.Security.Cryptography.Algorithms.dll
+E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\bin\Debug\System.Security.Cryptography.Encoding.dll
+E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\bin\Debug\System.Security.Cryptography.Primitives.dll
+E:\Remynd Systems GmbH\Remynd Systems GmbH Kunden - Daten\1.1 IT-Lösungen\1.1.1 BW\1.1.1.12 LEH\D365 Projekt\Code\Plugin\LEH-FS\LEH-FS\bin\Debug\System.Security.Cryptography.X509Certificates.dll

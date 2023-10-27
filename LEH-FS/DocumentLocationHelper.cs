@@ -1,4 +1,6 @@
-﻿using Microsoft.Xrm.Sdk;
+﻿using System;
+using System.Text;
+using Microsoft.Xrm.Sdk;
 
 public static class DocumentLocationHelper
 {

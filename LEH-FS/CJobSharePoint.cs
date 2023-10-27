@@ -9,6 +9,7 @@ namespace LEH_FS
         // Globale Variablen
         private IOrganizationService service;
         private IPluginExecutionContext context;
+        private ITracingService tracingService;
 
         public void Execute(IServiceProvider serviceProvider)
         {
@@ -16,6 +17,7 @@ namespace LEH_FS
             context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
             IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             service = serviceFactory.CreateOrganizationService(context.UserId);
+            tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             try
             {
@@ -95,12 +97,14 @@ namespace LEH_FS
                     site = string.Empty;
                 }
 
-                string token = SharePoint.GetSharePointAccessToken(domain, tenantId, clientId, clientSecret);
+                string token = SharePoint.GetAccessTokenAsync(domain, tenantId, clientId, clientSecret).GetAwaiter().GetResult();
+                
+                tracingService.Trace("Access Token: " + token);
 
-                if (!SharePoint.DoesFolderExist(token, domain, site, libary, folder))
-                {
+                // if (!SharePoint.DoesFolderExist(token, domain, site, libary, folder).GetAwaiter().GetResult())
+                // {
                     SharePoint.CreateFolder(token, domain, site, libary, folder);
-                }
+                // }
                 
                 DocumentLocationHelper.CreateCustomDocumentLocation(service, entity, name, domain, site, libary);
 
