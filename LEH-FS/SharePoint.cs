@@ -5,6 +5,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Xrm.Sdk;
 
 namespace LEH_FS
 {
@@ -15,14 +16,12 @@ namespace LEH_FS
         {
             try
             {
-                var tokenEndpoint = $"https://login.microsoftonline.com/{tenantId}/oauth2/token";
+                var tokenEndpoint = $"https://accounts.accesscontrol.windows.net/{tenantId}/tokens/OAuth/2";
 
                 var request = (HttpWebRequest) WebRequest.Create(tokenEndpoint);
                 request.Method = "POST";
                 request.ContentType = "application/x-www-form-urlencoded";
-                // request.ContentType = "multipart/form-data; boundary=--------------------------036878454579502116658519";
-                // request.Connection = "keep-alive";
-                // request.Accept = "*/*";
+                request.UserAgent = "PostmanRuntime/7.34.0";
 
                 var postData = new NameValueCollection
                 {
@@ -45,8 +44,6 @@ namespace LEH_FS
 
                 var responseString = await new StreamReader(response.GetResponseStream()).ReadToEndAsync();
                 
-                Console.WriteLine(responseString);
-
                 using (JsonDocument doc = JsonDocument.Parse(responseString))
                 {
                     return doc.RootElement.GetProperty("access_token").GetString();
@@ -116,7 +113,7 @@ namespace LEH_FS
         }
 
         public static void CreateFolder(string accessToken, string sharePointDomain, string sharePointSite,
-            string sharePointLibrary, Folder folder)
+            string sharePointLibrary, Folder folder, ITracingService tracingService, string path = "/")
         {
             string site = "/sites/" + sharePointSite + "/";
             if (site == "/sites//")
@@ -126,26 +123,12 @@ namespace LEH_FS
 
             HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://" + sharePointDomain + site +
                                                                         "_api/Web/Folders/add('" + sharePointLibrary +
-                                                                        "/" + folder.Name + "')");
+                                                                        path + folder.Name + "')");
             
-            Console.WriteLine(request.Address);
             request.Method = "POST";
             request.Accept = "application/json;odata=verbose";
             request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + accessToken);
             request.ContentLength = 0;
-            
-            Console.WriteLine(request.Accept);
-            Console.WriteLine(request.Host);
-            Console.WriteLine(request.Connection);
-            Console.WriteLine(request.TransferEncoding);
-            
-            
-
-            foreach (string key in request.Headers.Keys)
-            {
-                Console.WriteLine(key + ": " + request.Headers.Get(key));
-                
-            }
             
             try
             {
@@ -171,12 +154,23 @@ namespace LEH_FS
                 throw;
             }
 
+            string newPath = path + folder.Name + "/";
+            
+            tracingService.Trace(newPath);
+            
+            tracingService.Trace(folder.Subfolders.Count + "");
+
+            foreach (Folder subFolder in folder.Subfolders)
+            {
+                tracingService.Trace("-" + subFolder);
+            }
+
             if (folder.Subfolders.Count > 0)
             {
                 foreach (Folder subFolder in folder.Subfolders)
                 {
                     CreateFolder(accessToken, sharePointDomain, sharePointSite,
-                        sharePointLibrary, folder);
+                        sharePointLibrary, subFolder, tracingService, newPath);
                 }
             }
 

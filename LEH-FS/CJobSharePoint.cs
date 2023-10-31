@@ -77,7 +77,9 @@ namespace LEH_FS
                     name = entity.Id.ToString();
                 }
 
-                Folder folder = FolderParser.ParseFromXml(name, config.GetAttributeValue<String>("lehfs_xmlfolder"));
+                Folder folder = FolderParser.ParseFromXml(name, "<Root>" + config.GetAttributeValue<String>("lehfs_xmlfolder") + "</Root>");
+                
+                tracingService.Trace(config.GetAttributeValue<String>("lehfs_xmlfolder"));
 
                 string domain = config.GetAttributeValue<String>("lehfs_sharepointdomain");
                 string tenantId = config.GetAttributeValue<String>("lehfs_tenantid");
@@ -97,16 +99,18 @@ namespace LEH_FS
                     site = string.Empty;
                 }
 
+                Guid parentLocationId = GetEntitySiteGuid();
+
                 string token = SharePoint.GetAccessTokenAsync(domain, tenantId, clientId, clientSecret).GetAwaiter().GetResult();
                 
-                tracingService.Trace("Access Token: " + token);
+                // tracingService.Trace("Access Token: " + token);
 
                 // if (!SharePoint.DoesFolderExist(token, domain, site, libary, folder).GetAwaiter().GetResult())
                 // {
-                    SharePoint.CreateFolder(token, domain, site, libary, folder);
+                    SharePoint.CreateFolder(token, domain, site, libary, folder, tracingService);
                 // }
                 
-                DocumentLocationHelper.CreateCustomDocumentLocation(service, entity, name, domain, site, libary);
+                DocumentLocationHelper.CreateCustomDocumentLocation(service, entity, name, parentLocationId);
 
 
 
@@ -116,6 +120,42 @@ namespace LEH_FS
                 string className = ex.TargetSite.ReflectedType.Name;
                 throw new InvalidPluginExecutionException($"Error occurred in class {className}, file {ex.TargetSite.Module.Name} at line {GetLineNumber(ex)}: {ex.Message}. StackTrace: {ex.StackTrace}", ex);
             }
+        }
+
+        private Guid GetEntitySiteGuid()
+        {
+            
+            var query = new QueryExpression("sharepointdocumentlocation");
+            query.ColumnSet.AddColumn("sharepointdocumentlocationid");
+            query.Criteria.AddCondition("relativeurl", ConditionOperator.Equal, "lehfs_job");
+            EntityCollection col = service.RetrieveMultiple(query);
+
+            if (col.Entities.Count != 1)
+            {
+                Guid defaultSite = GetDefaultWebsiteGuid();
+                Entity defaultWebsiteEnitity = new Entity("sharepointdocumentlocation");
+                defaultWebsiteEnitity["name"] = "Defaultlocation LEH Auftrag";
+                defaultWebsiteEnitity["parentsiteorlocation"] = new EntityReference("sharepointsite", defaultSite);
+                defaultWebsiteEnitity["relativeurl"] ="lehfs_job";
+                return service.Create(defaultWebsiteEnitity);
+            }
+
+            return col[0].Id;
+        }
+
+        private Guid GetDefaultWebsiteGuid()
+        {
+            var query = new QueryExpression("sharepointsite");
+            query.ColumnSet.AddColumn("sharepointsiteid");
+            query.Criteria.AddCondition("isdefault", ConditionOperator.Equal, true);
+            EntityCollection col = service.RetrieveMultiple(query);
+
+            if (col.Entities.Count != 1)
+            {
+                throw new Exception("No Defaultsite definied!");
+            }
+
+            return col[0].Id;
         }
 
         private int GetLineNumber(Exception ex)
