@@ -7,47 +7,50 @@ namespace LEH_FS
     public class CJobSharePoint : IPlugin
     {
         // Globale Variablen
-        private IOrganizationService service;
-        private IPluginExecutionContext context;
-        private ITracingService tracingService;
+        private IOrganizationService _service;
+        private IPluginExecutionContext _context;
+        private ITracingService _tracingService;
 
         public void Execute(IServiceProvider serviceProvider)
         {
             // Initialisieren der globalen Variablen
-            context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
+            _context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
             IOrganizationServiceFactory serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
-            service = serviceFactory.CreateOrganizationService(context.UserId);
-            tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
+            _service = serviceFactory.CreateOrganizationService(_context.UserId);
+            _tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
 
             try
             {
                 // Überprüfen der Tiefe, um redundante Ausführungen zu verhindern.
-                if (context.Depth > 1)
+                if (_context.Depth > 1)
                 {
                     return;
                 }
 
                 // Hier kommt Ihre benutzerdefinierte Logik.
                 
-                if (!(context.InputParameters["Target"] is Entity))
+                if (!(_context.InputParameters["Target"] is Entity))
                 {
                     return;
                 }
                 
-                Entity entity = (Entity) context.InputParameters["Target"];
+                Entity entity = (Entity) _context.InputParameters["Target"];
                 
                 if (entity.LogicalName != "lehfs_job")
                 {
                     return;
                 }
 
-                if (context.MessageName != "Create")
+                if (_context.MessageName != "Create")
                 {
                     return;                    
                 }
                 
-                var query = new QueryExpression("lehfs_lehfskonfiguration");
-                query.TopCount = 1;query.ColumnSet.AddColumns(
+                var query = new QueryExpression("lehfs_lehfskonfiguration")
+                {
+                    TopCount = 1
+                };
+                query.ColumnSet.AddColumns(
                     "lehfs_clientid",
                     "lehfs_clientsecret",
                     "lehfs_sharepointdomain",
@@ -56,7 +59,7 @@ namespace LEH_FS
                     "lehfs_tenantid",
                     "lehfs_xmlfolder");
                                                         
-                EntityCollection col = service.RetrieveMultiple(query);
+                EntityCollection col = _service.RetrieveMultiple(query);
                 
                 if (col.Entities.Count == 0)
                 {
@@ -77,19 +80,19 @@ namespace LEH_FS
                     name = entity.Id.ToString();
                 }
 
-                Folder folder = FolderParser.ParseFromXml(name, "<Root>" + config.GetAttributeValue<String>("lehfs_xmlfolder") + "</Root>");
+                Folder folder = FolderParser.ParseFromXml(name, "<Folder Name=\"Root\">" + config.GetAttributeValue<String>("lehfs_xmlfolder") + "</Folder>");
                 
-                tracingService.Trace(config.GetAttributeValue<String>("lehfs_xmlfolder"));
+                _tracingService.Trace(config.GetAttributeValue<String>("lehfs_xmlfolder"));
 
                 string domain = config.GetAttributeValue<String>("lehfs_sharepointdomain");
                 string tenantId = config.GetAttributeValue<String>("lehfs_tenantid");
                 string clientId = config.GetAttributeValue<String>("lehfs_clientid");
                 string clientSecret = config.GetAttributeValue<String>("lehfs_clientsecret");
-                string libary = config.GetAttributeValue<String>("lehfs_sharepointlibrary");
+                string library = config.GetAttributeValue<String>("lehfs_sharepointlibrary");
                 string site = config.GetAttributeValue<String>("lehfs_sharepointsitename");
 
                 if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(domain) ||
-                    string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(libary))
+                    string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(library))
                 {
                     throw new Exception("Configuration not complete");
                 }
@@ -107,17 +110,17 @@ namespace LEH_FS
 
                 // if (!SharePoint.DoesFolderExist(token, domain, site, libary, folder).GetAwaiter().GetResult())
                 // {
-                    SharePoint.CreateFolder(token, domain, site, libary, folder, tracingService);
+                    SharePoint.CreateFolder(token, domain, site, library, folder);
                 // }
                 
-                DocumentLocationHelper.CreateCustomDocumentLocation(service, entity, name, parentLocationId);
+                DocumentLocationHelper.CreateCustomDocumentLocation(_service, entity, name, parentLocationId);
 
 
 
             }
             catch (Exception ex)
             {
-                string className = ex.TargetSite.ReflectedType.Name;
+                string className = ex.TargetSite.ReflectedType?.Name;
                 throw new InvalidPluginExecutionException($"Error occurred in class {className}, file {ex.TargetSite.Module.Name} at line {GetLineNumber(ex)}: {ex.Message}. StackTrace: {ex.StackTrace}", ex);
             }
         }
@@ -128,16 +131,18 @@ namespace LEH_FS
             var query = new QueryExpression("sharepointdocumentlocation");
             query.ColumnSet.AddColumn("sharepointdocumentlocationid");
             query.Criteria.AddCondition("relativeurl", ConditionOperator.Equal, "lehfs_job");
-            EntityCollection col = service.RetrieveMultiple(query);
+            EntityCollection col = _service.RetrieveMultiple(query);
 
             if (col.Entities.Count != 1)
             {
                 Guid defaultSite = GetDefaultWebsiteGuid();
-                Entity defaultWebsiteEnitity = new Entity("sharepointdocumentlocation");
-                defaultWebsiteEnitity["name"] = "Defaultlocation LEH Auftrag";
-                defaultWebsiteEnitity["parentsiteorlocation"] = new EntityReference("sharepointsite", defaultSite);
-                defaultWebsiteEnitity["relativeurl"] ="lehfs_job";
-                return service.Create(defaultWebsiteEnitity);
+                Entity defaultWebsiteEntity = new Entity("sharepointdocumentlocation")
+                {
+                    ["name"] = "Defaultlocation LEH Auftrag",
+                    ["parentsiteorlocation"] = new EntityReference("sharepointsite", defaultSite),
+                    ["relativeurl"] = "lehfs_job"
+                };
+                return _service.Create(defaultWebsiteEntity);
             }
 
             return col[0].Id;
@@ -148,7 +153,7 @@ namespace LEH_FS
             var query = new QueryExpression("sharepointsite");
             query.ColumnSet.AddColumn("sharepointsiteid");
             query.Criteria.AddCondition("isdefault", ConditionOperator.Equal, true);
-            EntityCollection col = service.RetrieveMultiple(query);
+            EntityCollection col = _service.RetrieveMultiple(query);
 
             if (col.Entities.Count != 1)
             {

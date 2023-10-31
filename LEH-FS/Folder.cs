@@ -9,7 +9,7 @@ namespace LEH_FS
         public string Name { get; set; }
         public List<Folder> Subfolders { get; set; }
 
-        public Folder()
+        private Folder()
         {
             Subfolders = new List<Folder>();
         }
@@ -25,7 +25,7 @@ namespace LEH_FS
         }
     }
     
-    public class FolderParser
+    public static class FolderParser
     {
         public static Folder ParseFromXml(string rootFolderName, string xmlContent)
         {
@@ -38,10 +38,12 @@ namespace LEH_FS
             {
                 XDocument doc = XDocument.Parse(xmlContent);
                 Folder rootFolder = new Folder(rootFolderName);
-                foreach (var subElement in doc.Root.Elements())
-                {
-                    rootFolder.AddSubfolder(ParseElement(subElement));
-                }
+                if (doc.Root != null)
+                    foreach (var subElement in doc.Root.Elements("Folder"))
+                    {
+                        rootFolder.AddSubfolder(ParseElement(subElement));
+                    }
+
                 return rootFolder;
             }
             catch (Exception)
@@ -53,8 +55,9 @@ namespace LEH_FS
 
         private static Folder ParseElement(XElement element)
         {
-            Folder folder = new Folder(element.Name.LocalName);
-            foreach (var subElement in element.Elements())
+            string folderName = element.Attribute("Name")?.Value;
+            Folder folder = new Folder(folderName);
+            foreach (var subElement in element.Elements("Folder"))
             {
                 folder.AddSubfolder(ParseElement(subElement));
             }
@@ -67,22 +70,12 @@ namespace LEH_FS
         // string xmlInput = "..."; // Ihr XML-String ohne den Root-Ordner
         // var rootFolder = FolderParser.ParseFromXml(rootFolderName, xmlInput);
         /*
-        <Folder1>
-            <Subfolder1-1>
-                <SubSubfolder1-1-1 />
-                <SubSubfolder1-1-2 />
-                <SubSubfolder1-1-3 />
-            </Subfolder1-1>
-            <Subfolder1-2>
-                <SubSubfolder1-2-1 />
-                <SubSubfolder1-2-2 />
-                <SubSubfolder1-2-3 />
-            </Subfolder1-2>
-            <Subfolder1-3>
-                <SubSubfolder1-3-1 />
-                <SubSubfolder1-3-2 />
-                <SubSubfolder1-3-3 />
-            </Subfolder1-3>
-        </Folder1>
+        <Folder Name="Folder 1">
+            <Folder Name="Subfolder 1 1">
+                <Folder Name="Sub Subfolder 1 1 1" />
+        ...
+            </Folder>
+    ...
+        </Folder>
         */
 }

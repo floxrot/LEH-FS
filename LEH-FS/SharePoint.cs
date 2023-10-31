@@ -5,11 +5,10 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Xrm.Sdk;
 
 namespace LEH_FS
 {
-    public class SharePoint
+    public static class SharePoint
     {
         public static async Task<string> GetAccessTokenAsync(string sharePointDomain, string tenantId, string clientId,
             string clientSecret)
@@ -42,7 +41,7 @@ namespace LEH_FS
 
                 var response = (HttpWebResponse) await request.GetResponseAsync();
 
-                var responseString = await new StreamReader(response.GetResponseStream()).ReadToEndAsync();
+                var responseString = await new StreamReader(response.GetResponseStream() ?? throw new InvalidOperationException()).ReadToEndAsync();
                 
                 using (JsonDocument doc = JsonDocument.Parse(responseString))
                 {
@@ -75,45 +74,45 @@ namespace LEH_FS
             }
         }
 
-        public static async Task<bool> DoesFolderExist(string accessToken, string sharePointDomain,
-            string sharePointSite,
-            string sharePointLibrary, Folder folder)
-        {
-            string site = "/sites/" + sharePointSite + "/";
-            if (site == "/sites//")
-            {
-                site = "/sites/";
-            }
-
-            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://" + sharePointDomain + site +
-                                                                        "_api/web/GetFolderByServerRelativeUrl('" +
-                                                                        sharePointLibrary + "/" + folder.Name + "')");
-            request.Method = "POST";
-            request.Accept = "application/json;odata=verbose";
-            request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + accessToken);
-            request.ContentLength = 0;
-            try
-            {
-                using (WebResponse
-                       response = await request.GetResponseAsync()) // Hier wurde der await-Operator hinzugefügt
-                {
-                    return true;
-                }
-            }
-            catch (WebException wex)
-            {
-                HttpWebResponse httpResponse = wex.Response as HttpWebResponse;
-                if (httpResponse.StatusCode == HttpStatusCode.NotFound)
-                {
-                    return false;
-                }
-
-                throw;
-            }
-        }
+        // public static async Task<bool> DoesFolderExist(string accessToken, string sharePointDomain,
+        //     string sharePointSite,
+        //     string sharePointLibrary, Folder folder)
+        // {
+        //     string site = "/sites/" + sharePointSite + "/";
+        //     if (site == "/sites//")
+        //     {
+        //         site = "/sites/";
+        //     }
+        //
+        //     HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://" + sharePointDomain + site +
+        //                                                                 "_api/web/GetFolderByServerRelativeUrl('" +
+        //                                                                 sharePointLibrary + "/" + folder.Name + "')");
+        //     request.Method = "POST";
+        //     request.Accept = "application/json;odata=verbose";
+        //     request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + accessToken);
+        //     request.ContentLength = 0;
+        //     try
+        //     {
+        //         using (WebResponse
+        //                response = await request.GetResponseAsync()) // Hier wurde der await-Operator hinzugefügt
+        //         {
+        //             return true;
+        //         }
+        //     }
+        //     catch (WebException wex)
+        //     {
+        //         HttpWebResponse httpResponse = wex.Response as HttpWebResponse;
+        //         if (httpResponse.StatusCode == HttpStatusCode.NotFound)
+        //         {
+        //             return false;
+        //         }
+        //
+        //         throw;
+        //     }
+        // }
 
         public static void CreateFolder(string accessToken, string sharePointDomain, string sharePointSite,
-            string sharePointLibrary, Folder folder, ITracingService tracingService, string path = "/")
+            string sharePointLibrary, Folder folder, string path = "/")
         {
             string site = "/sites/" + sharePointSite + "/";
             if (site == "/sites//")
@@ -132,7 +131,7 @@ namespace LEH_FS
             
             try
             {
-                using (WebResponse response = request.GetResponse())
+                using (var unused = request.GetResponse())
                 {
                     // Do something if the resource has changed.leh_fs_job!return;
                    
@@ -140,37 +139,22 @@ namespace LEH_FS
             }
             catch (WebException wex)
             {
-                HttpWebResponse httpResponse = wex.Response as HttpWebResponse;
-                if (httpResponse.StatusCode == HttpStatusCode.NotModified)
+                if (wex.Response is HttpWebResponse httpResponse && httpResponse.StatusCode == HttpStatusCode.NotModified)
                 {
                     // resource was not modified.
                 }
 
                 throw;
             }
-            catch (Exception)
-            {
-                // Something else happened. Rethrow or log.
-                throw;
-            }
 
             string newPath = path + folder.Name + "/";
-            
-            tracingService.Trace(newPath);
-            
-            tracingService.Trace(folder.Subfolders.Count + "");
-
-            foreach (Folder subFolder in folder.Subfolders)
-            {
-                tracingService.Trace("-" + subFolder);
-            }
 
             if (folder.Subfolders.Count > 0)
             {
                 foreach (Folder subFolder in folder.Subfolders)
                 {
                     CreateFolder(accessToken, sharePointDomain, sharePointSite,
-                        sharePointLibrary, subFolder, tracingService, newPath);
+                        sharePointLibrary, subFolder, newPath);
                 }
             }
 

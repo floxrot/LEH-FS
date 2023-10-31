@@ -1,30 +1,39 @@
 ﻿using System;
-using System.Text;
+using System.Linq;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 
-public static class DocumentLocationHelper
+namespace LEH_FS
 {
-    public static void CreateCustomDocumentLocation(IOrganizationService service, Entity entity, string folderName, Guid defaultLocation)
+    public static class DocumentLocationHelper
     {
-        Entity documentLocation = new Entity("sharepointdocumentlocation");
-
-        // Setzen Sie die notwendigen Attribute für die DocumentLocation
-        documentLocation["name"] = folderName;
-        documentLocation["regardingobjectid"] = new EntityReference(entity.LogicalName, entity.Id);
-
-        documentLocation["parentsiteorlocation"] = new EntityReference("sharepointdocumentlocation", defaultLocation);
+        public static void CreateCustomDocumentLocation(IOrganizationService service, Entity entity, string folderName, Guid defaultLocation)
+        {
         
-        // Setzen Sie die URL entsprechend Ihrer Anforderungen
-        // string domain = "lehsolution.sharepoint.com";
-        // string site = "D365Dev";
-        // string library = "D365";
-        // string folderName = entity.LogicalName; // Der Ordnername ist der Entity-Name ohne GUID
+            QueryExpression query = new QueryExpression("sharepointdocumentlocation")
+            {
+                ColumnSet = new ColumnSet("sharepointdocumentlocationid")
+            };
+            query.Criteria.AddCondition("regardingobjectid", ConditionOperator.Equal, entity.Id);
 
-        // documentLocation["absoluteurl"] = $"https://{domain}/{site}/{library}/{folderName}/";
-        // documentLocation["urloption"] = new OptionSetValue(1);
-        // documentLocation["relativeurl"] = $"{site}/{library}/{folderName}/";
-        documentLocation["relativeurl"] = folderName;
+            EntityCollection results = service.RetrieveMultiple(query);
+        
+            Entity documentLocation = new Entity("sharepointdocumentlocation");
 
-        service.Create(documentLocation);
+            if (results.Entities.Any())
+            {
+                documentLocation = results[0];
+            }
+        
+        
+
+            documentLocation["name"] = folderName;
+            documentLocation["regardingobjectid"] = new EntityReference(entity.LogicalName, entity.Id);
+
+            documentLocation["parentsiteorlocation"] = new EntityReference("sharepointdocumentlocation", defaultLocation);
+            documentLocation["relativeurl"] = folderName;
+
+            service.Create(documentLocation);
+        }
     }
 }
