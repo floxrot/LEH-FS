@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
-namespace LEH_FS
+namespace LEH.FieldService.Plugin.Util
 {
     public static class DocumentLocationHelper
     {

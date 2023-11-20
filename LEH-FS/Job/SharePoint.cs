@@ -1,10 +1,11 @@
 ﻿using System;
+using LEH.FieldService.Plugin.Util;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 
-namespace LEH_FS
+namespace LEH.FieldService.Plugin.Job
 {
-    public class CJobSharePoint : IPlugin
+    public class SharePoint : IPlugin
     {
         // Globale Variablen
         private IOrganizationService _service;
@@ -104,13 +105,13 @@ namespace LEH_FS
 
                 Guid parentLocationId = GetEntitySiteGuid();
 
-                string token = SharePoint.GetAccessTokenAsync(domain, tenantId, clientId, clientSecret).GetAwaiter().GetResult();
+                string token = SharePointHelper.GetAccessTokenAsync(domain, tenantId, clientId, clientSecret).GetAwaiter().GetResult();
                 
                 // tracingService.Trace("Access Token: " + token);
 
                 // if (!SharePoint.DoesFolderExist(token, domain, site, libary, folder).GetAwaiter().GetResult())
                 // {
-                    SharePoint.CreateFolder(token, domain, site, library, folder);
+                SharePointHelper.CreateFolder(token, domain, site, library, folder);
                 // }
                 
                 DocumentLocationHelper.CreateCustomDocumentLocation(_service, entity, name, parentLocationId);

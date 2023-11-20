@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Xml.Linq;
 
-namespace LEH_FS
+namespace LEH.FieldService.Plugin.Util
 {
     public class Folder
     {

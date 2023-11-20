@@ -6,9 +6,9 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace LEH_FS
+namespace LEH.FieldService.Plugin.Util
 {
-    public static class SharePoint
+    public static class SharePointHelper
     {
         public static async Task<string> GetAccessTokenAsync(string sharePointDomain, string tenantId, string clientId,
             string clientSecret)
